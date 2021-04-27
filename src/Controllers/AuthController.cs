@@ -14,14 +14,17 @@ namespace src
   {
     private readonly ILogger<AuthController> _logger;
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _config;
 
     public AuthController(
       ILogger<AuthController> logger,
-      ApplicationDbContext context
+      ApplicationDbContext context,
+      IConfiguration config
     )
     {
       _logger = logger;
       _context = context;
+      _config = config;
     }
 
     [Route("Register")]
@@ -83,7 +86,7 @@ namespace src
 
       if (!(user is null))
       {
-        return new UserDto(user);
+        return new GenerateJWT(Login(user));
       }
 
       Account account = await this._context.Accounts
@@ -104,6 +107,29 @@ namespace src
         return new UserDto(sUSer);
       }
     }
+
+    private string GenerateJWT(Login userInfo)    
+        {
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["JWT:Key"]));
+            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
+    
+
+        var claims = new[] {
+                new Claim(JwtRegisteredClaimNames.Sub, userInfo.user.username),
+                new Claim(JwtRegisteredClaimNames.Email, userInfo.user.email),
+                new Claim("Date", DateTime.Now.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+            
+
+            var token = new JwtSecurityToken(_config["JWT:Issuer"],    
+              _config["JWT:Issuer"],    
+              claims,    
+              expires: DateTime.Now.AddHours(2),    
+              signingCredentials: credentials);    
+    
+            return new JwtSecurityTokenHandler().WriteToken(token);    
+        }
   }
 
   public class RegisterDto
