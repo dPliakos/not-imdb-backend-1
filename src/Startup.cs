@@ -70,27 +70,27 @@ namespace src
     {
 
       app.UseMiddleware<JwtMiddleware>();
-      // // Redirect calls to the root path at the client application 
-      app.UseRewriter(new RewriteOptions()
-        .AddRedirect("^\\/?$", "/client")
-      );
      
-      app.Map(new PathString("/client"), client =>
-      {
-        var clientPath = Path.Combine(Directory.GetCurrentDirectory(), "./../dist");
-        StaticFileOptions clientAppDist = new StaticFileOptions()
-        {
-          FileProvider = new PhysicalFileProvider(clientPath)
-        };
-        client.UseSpaStaticFiles(clientAppDist);
-        client.UseSpa(spa =>
-        {
-          spa.Options.DefaultPageStaticFileOptions = clientAppDist;
-        });
-      });
-
       if (env.IsDevelopment())
       {
+        // // Redirect calls to the root path at the client application 
+        app.UseRewriter(new RewriteOptions()
+          .AddRedirect("^\\/?$", "/client")
+        );
+
+        app.Map(new PathString("/client"), client =>
+        {
+          var clientPath = Path.Combine(Directory.GetCurrentDirectory(), "./../dist");
+          StaticFileOptions clientAppDist = new StaticFileOptions()
+          {
+            FileProvider = new PhysicalFileProvider(clientPath)
+          };
+          client.UseSpaStaticFiles(clientAppDist);
+          client.UseSpa(spa =>
+          {
+            spa.Options.DefaultPageStaticFileOptions = clientAppDist;
+          });
+        });
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
         app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "src v1"));
